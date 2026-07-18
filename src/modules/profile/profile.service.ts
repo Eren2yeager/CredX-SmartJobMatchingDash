@@ -53,7 +53,7 @@ function validateCreate(body: unknown): ValidationOk<ProfileInput> | ValidationE
     fields.location = "must be a string";
 
   if (Object.keys(fields).length > 0) return { ok: false, fields };
-  return { ok: true, data: b as ProfileInput };
+  return { ok: true, data: b as unknown as ProfileInput };
 }
 
 function validatePatch(body: unknown): ValidationOk<ProfilePatch> | ValidationError {
