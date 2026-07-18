@@ -7,7 +7,9 @@
 
   CredX is a full-stack, explainable job and internship matching platform that turns a student's skills, GPA, and work-authorization status into ranked recommendations—and shows exactly why every role matched.
 
-  [Explore the product](#product-walkthrough) · [Understand the algorithm](#how-the-matching-engine-works) · [Run locally](#run-credx-locally) · [View the presentation](output/presentations/CredX_Project_Presentation.pptx)
+  [View the live application](https://cred-x-smart-job-matching-dash.vercel.app/) · [Explore the product](#product-walkthrough) · [Understand the algorithm](#how-the-matching-engine-works) · [Run locally](#run-credx-locally)
+
+  [![Open CredX](https://img.shields.io/badge/OPEN_LIVE_PROJECT-E4512F?style=for-the-badge&logo=vercel&logoColor=white)](https://cred-x-smart-job-matching-dash.vercel.app/)
 
   ![Next.js](https://img.shields.io/badge/Next.js_16-111827?style=flat-square&logo=next.js&logoColor=white)
   ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
@@ -31,6 +33,14 @@ CredX replaces that uncertainty with a transparent recommendation loop:
 5. Students apply and track progress while recruiters manage the same pipeline.
 
 > **Core product decision:** matching logic is intentionally rule-based and explainable. A judge, student, or recruiter can reproduce the score instead of trusting an opaque black box.
+
+## Live deployment
+
+CredX is deployed on Vercel and available for evaluation:
+
+### **[Launch CredX →](https://cred-x-smart-job-matching-dash.vercel.app/)**
+
+The deployed application demonstrates the responsive landing page, Google authentication flow, student matching experience, application tracking, and recruiter workspace described below.
 
 ## Evaluation criteria, covered
 
@@ -287,11 +297,11 @@ src/
 - SEO metadata, Open Graph data, JSON-LD, sitemap, robots policy, and PWA manifest.
 - Deterministic matching tests covering boundaries and invariants.
 
-## Presentation
+## Explore the working product
 
-The repository includes a judge-ready walkthrough covering the problem, solution, student journey, algorithm, system architecture, recruiter workflow, and product impact:
+The live application is the most reliable way to evaluate the complete experience, from authentication and profile creation to explainable matching and application tracking:
 
-**[Open the CredX project presentation →](output/presentations/CredX_Project_Presentation.pptx)**
+**[Open the deployed CredX application →](https://cred-x-smart-job-matching-dash.vercel.app/)**
 
 ---
 
