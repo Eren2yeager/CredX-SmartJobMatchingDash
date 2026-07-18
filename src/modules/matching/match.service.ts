@@ -44,11 +44,17 @@ export async function recomputeForListing(listingId: string): Promise<void> {
   );
 }
 
-export async function getMatchesForStudent(studentId: string) {
+export async function getMatchesForStudent(userId: string) {
   await connectDB();
 
-  return Match.find({ studentId })
+  const profile = await StudentProfile.findOne({ userId }).select("_id").lean();
+  if (!profile) return [];
+
+  return Match.find({ studentId: profile._id })
     .sort({ score: -1 })
-    .populate("listingId", "title company location workMode sponsorshipOffered")
+    .populate(
+      "listingId",
+      "title company location workMode sponsorshipOffered requiredSkills description minGpa createdAt"
+    )
     .lean();
 }

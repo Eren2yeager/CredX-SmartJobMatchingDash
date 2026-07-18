@@ -24,6 +24,8 @@ export interface ProfileInput {
   gpa: number;
   workAuthStatus: WorkAuthStatus;
   location?: string;
+  resumeUrl?: string;
+  resumeParsedSkills?: string[];
 }
 
 export interface ProfilePatch {
@@ -31,6 +33,8 @@ export interface ProfilePatch {
   gpa?: number;
   workAuthStatus?: WorkAuthStatus;
   location?: string;
+  resumeUrl?: string;
+  resumeParsedSkills?: string[];
 }
 
 type ValidationError = { ok: false; fields: Record<string, string> };
@@ -51,6 +55,12 @@ function validateCreate(body: unknown): ValidationOk<ProfileInput> | ValidationE
 
   if (b?.location !== undefined && typeof b.location !== "string")
     fields.location = "must be a string";
+
+  if (b?.resumeUrl !== undefined && typeof b.resumeUrl !== "string")
+    fields.resumeUrl = "must be a string";
+
+  if (b?.resumeParsedSkills !== undefined && !Array.isArray(b.resumeParsedSkills))
+    fields.resumeParsedSkills = "must be an array";
 
   if (Object.keys(fields).length > 0) return { ok: false, fields };
   return { ok: true, data: b as unknown as ProfileInput };
@@ -77,6 +87,12 @@ function validatePatch(body: unknown): ValidationOk<ProfilePatch> | ValidationEr
 
   if (b?.location !== undefined && typeof b.location !== "string")
     fields.location = "must be a string";
+
+  if (b?.resumeUrl !== undefined && typeof b.resumeUrl !== "string")
+    fields.resumeUrl = "must be a string";
+
+  if (b?.resumeParsedSkills !== undefined && !Array.isArray(b.resumeParsedSkills))
+    fields.resumeParsedSkills = "must be an array";
 
   if (Object.keys(fields).length > 0) return { ok: false, fields };
   return { ok: true, data: b as ProfilePatch };
@@ -122,6 +138,10 @@ export async function create(
     gpa:           data.gpa,
     workAuthStatus: data.workAuthStatus,
     location:      data.location,
+    resumeUrl:     data.resumeUrl,
+    resumeParsedSkills: data.resumeParsedSkills
+      ? normalizeSkills(data.resumeParsedSkills)
+      : [],
     createdAt:     now,
     updatedAt:     now,
   });
@@ -155,11 +175,14 @@ export async function update(
   if (data.gpa !== undefined) patch.gpa = data.gpa;
   if (data.workAuthStatus !== undefined) patch.workAuthStatus = data.workAuthStatus;
   if (data.location !== undefined) patch.location = data.location;
+  if (data.resumeUrl !== undefined) patch.resumeUrl = data.resumeUrl;
+  if (data.resumeParsedSkills !== undefined)
+    patch.resumeParsedSkills = normalizeSkills(data.resumeParsedSkills);
 
   const updated = await StudentProfile.findOneAndUpdate(
     { userId },
     { $set: patch },
-    { new: true }
+    { returnDocument: "after" }
   ).lean();
 
   if (!updated) throw new ProfileNotFoundError("Profile not found");
