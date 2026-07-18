@@ -2,6 +2,8 @@
 
 CredX is a skill-first career matching platform designed to connect students with relevant **job and internship** opportunities and provide recruiters with a pipeline of qualified candidates. It moves beyond simple keyword matching by employing a weighted scoring engine that transparently evaluates compatibility based on skills, GPA, and work authorization — surfacing a **ranked, explainable** set of recommendations rather than just a filtered list.
 
+Live Site :) https://cred-x-smart-job-matching-dash.vercel.app/
+
 ## Key Features
 
 ### For Students
