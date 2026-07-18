@@ -10,7 +10,7 @@ import { ArrowRight, BriefcaseBusiness, MapPin, Plus, UsersRound } from "lucide-
 
 export default async function RecruiterListingsPage() {
   const session = await auth();
-  if (!session) redirect("/api/auth/signin");
+  if (!session) redirect("/auth/signin");
   await connectDB();
   const listings = await Listing.find({ recruiterId: session.user.id }).sort({ createdAt: -1 }).lean();
   const counts = await Application.aggregate<{ _id: unknown; count: number }>([{ $match: { listingId: { $in: listings.map((item) => item._id) } } }, { $group: { _id: "$listingId", count: { $sum: 1 } } }]);

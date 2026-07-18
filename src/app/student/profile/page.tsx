@@ -57,8 +57,15 @@ export default function ProfilePage() {
 
   async function uploadResume(file?: File) {
     if (!file) return;
-    if (file.type !== "application/pdf") {
-      setMessage({ tone: "error", text: "Please choose a PDF resume." });
+    const acceptedTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+    if (!acceptedTypes.includes(file.type)) {
+      setMessage({ tone: "error", text: "Please choose a PDF, DOCX, PNG, JPEG, or WebP resume." });
       return;
     }
     setUploading(true);
@@ -156,11 +163,11 @@ export default function ProfilePage() {
         <aside className="surface p-6 lg:sticky lg:top-24">
           <span className="grid size-11 place-items-center rounded-xl bg-accent text-accent-foreground"><FileText className="size-5" /></span>
           <h2 className="mt-5 text-xl font-bold">Resume intelligence</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">Upload a PDF and CredX will suggest technical skills for you to approve.</p>
-          <input ref={fileRef} type="file" accept="application/pdf" className="sr-only" onChange={(event) => uploadResume(event.target.files?.[0])} />
-          <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()} className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card text-sm font-bold hover:bg-muted disabled:opacity-60">{uploading ? <LoaderCircle className="size-4 animate-spin" /> : <Upload className="size-4" />}{uploading ? "Analyzing resume" : resumeUrl ? "Replace resume" : "Upload PDF"}</button>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Upload a PDF, DOCX, or clear resume image and CredX will suggest skills for you to approve.</p>
+          <input ref={fileRef} type="file" accept=".pdf,.docx,image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => uploadResume(event.target.files?.[0])} />
+          <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()} className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card text-sm font-bold hover:bg-muted disabled:opacity-60">{uploading ? <LoaderCircle className="size-4 animate-spin" /> : <Upload className="size-4" />}{uploading ? "Analyzing resume" : resumeUrl ? "Replace resume" : "Upload resume"}</button>
           {resumeUrl && <a href={resumeUrl} target="_blank" rel="noreferrer" className="mt-3 block text-center text-xs font-bold text-primary hover:underline">View current resume</a>}
-          <div className="mt-6 rounded-xl bg-muted p-4"><p className="text-xs font-bold">Before you upload</p><ul className="mt-2 space-y-1.5 text-xs leading-5 text-muted-foreground"><li>PDF format only</li><li>Maximum file size: 5 MB</li><li>You choose which suggestions to keep</li></ul></div>
+          <div className="mt-6 rounded-xl bg-muted p-4"><p className="text-xs font-bold">Before you upload</p><ul className="mt-2 space-y-1.5 text-xs leading-5 text-muted-foreground"><li>PDF, DOCX, PNG, JPEG, or WebP</li><li>Maximum file size: 5 MB</li><li>Images should be clear and easy to read</li><li>You choose which suggestions to keep</li></ul></div>
         </aside>
       </form>
     </main>

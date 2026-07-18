@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session) redirect("/api/auth/signin");
+  if (!session) redirect("/auth/signin");
   await connectDB();
   const { id } = await params;
 

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   if (!formData) return Response.json({ error: "Invalid form data" }, { status: 400 });
 
   const file = formData.get("resume");
-  if (!file || !(file instanceof Blob)) {
+  if (!file || !(file instanceof File)) {
     return Response.json({ error: "Missing resume field" }, { status: 400 });
   }
 
@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
     const { resumeUrl, parsedSkills, analysisWarning } = await Resume_Parser.parseResume(
       buffer,
       file.type,
-      file.size
+      file.size,
+      file.name
     );
     return Response.json({ resumeUrl, parsedSkills, analysisWarning }, { status: 200 });
   } catch (err) {

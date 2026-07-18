@@ -32,7 +32,7 @@ function scoreTone(score: number) {
 
 export default async function StudentDashboardPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const session = await auth();
-  if (!session) redirect("/api/auth/signin");
+  if (!session) redirect("/auth/signin");
 
   const filters = await searchParams;
   const workMode = typeof filters.workMode === "string" ? filters.workMode : "";

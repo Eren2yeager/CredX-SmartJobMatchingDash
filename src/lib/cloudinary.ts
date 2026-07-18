@@ -25,7 +25,7 @@ export async function uploadResume(
 ): Promise<{ url: string }> {
   configureCloudinary();
 
-  const publicId = `${filename}.pdf`;
+  const publicId = filename;
   let lastError: unknown;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -45,7 +45,7 @@ function uploadOnce(buffer: Buffer, publicId: string): Promise<{ url: string }> 
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        resource_type: "raw",
+        resource_type: "auto",
         folder: "resumes",
         public_id: publicId,
         overwrite: true,

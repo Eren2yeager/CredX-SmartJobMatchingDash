@@ -10,7 +10,7 @@ import { ArrowRight, BriefcaseBusiness, Clock3, Plus, UsersRound } from "lucide-
 
 export default async function RecruiterDashboardPage() {
   const session = await auth();
-  if (!session) redirect("/api/auth/signin");
+  if (!session) redirect("/auth/signin");
   await connectDB();
   const listings = await Listing.find({ recruiterId: session.user.id }).sort({ createdAt: -1 }).lean();
   const ids = listings.map((listing) => listing._id);
