@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,25 @@ export const metadata: Metadata = {
     "A skill-first career matching workspace for students and recruiters.",
 };
 
+export const viewport: Viewport = {
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7fafc" },
+    { media: "(prefers-color-scheme: dark)", color: "#111820" },
+  ],
+};
+
+const themeScript = `
+  try {
+    const savedTheme = localStorage.getItem("credx-theme");
+    const theme = savedTheme === "light" || savedTheme === "dark"
+      ? savedTheme
+      : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.style.colorScheme = theme;
+  } catch {}
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -42,6 +61,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={cn(
         "h-full",
         "antialiased",
@@ -51,7 +72,10 @@ export default function RootLayout({
         "font-sans"
       )}
     >
-      <body suppressHydrationWarning className="min-h-full flex flex-col">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className="min-h-full flex flex-col">
         <AppHeader />
         <div className="flex flex-1 flex-col">{children}</div>
       </body>
