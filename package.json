@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "bun run scripts/seed.ts"
+    "seed": "npx tsx --env-file=.env.local scripts/seed.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
