@@ -26,7 +26,7 @@ const statusLabel = { applied: "Applied", under_review: "Under review", accepted
 
 export default async function ApplicationsPage() {
   const session = await auth();
-  if (!session) redirect("/api/auth/signin");
+  if (!session) redirect("/auth/signin");
   await connectDB();
   const applications = (await ApplicationService.listForStudent(session.user.id)) as unknown as Application[];
 

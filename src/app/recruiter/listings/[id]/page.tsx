@@ -15,7 +15,7 @@ type Candidate = { _id: { toString(): string }; name?: string; email: string; im
 
 export default async function ListingPipelinePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session) redirect("/api/auth/signin");
+  if (!session) redirect("/auth/signin");
   await connectDB();
   const { id } = await params;
   const listing = await Listing.findOne({ _id: id, recruiterId: session.user.id }).lean().catch(() => null);

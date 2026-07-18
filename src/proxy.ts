@@ -24,7 +24,9 @@ export async function proxy(request: NextRequest) {
   // Page routes: no session → redirect to sign-in
   if (pathname.startsWith("/student/") || pathname.startsWith("/recruiter/")) {
     if (!token) {
-      return NextResponse.redirect(new URL("/api/auth/signin", request.url));
+      const signInUrl = new URL("/auth/signin", request.url);
+      signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname + request.nextUrl.search);
+      return NextResponse.redirect(signInUrl);
     }
     return NextResponse.next();
   }

@@ -20,7 +20,7 @@ const signals = [
 
 export default async function Home() {
   const session = await auth();
-  const primaryHref = session ? "/student/dashboard" : "/api/auth/signin";
+  const primaryHref = session ? "/student/dashboard" : "/auth/signin";
 
   return (
     <main className="overflow-hidden">
@@ -112,7 +112,7 @@ export default async function Home() {
             <BriefcaseBusiness className="size-9 text-primary" />
             <h2 className="mt-7 max-w-xl font-heading text-5xl tracking-wide sm:text-6xl">LESS SORTING. MORE SIGNAL.</h2>
             <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground">Publish structured roles, see matched candidates, and move applications forward without losing the human context.</p>
-            <Link href={session ? "/recruiter/dashboard" : "/api/auth/signin"} className="mt-8 inline-flex h-11 items-center gap-2 rounded-lg bg-foreground px-5 text-sm font-bold text-background hover:opacity-90 active:translate-y-px">
+            <Link href={session ? "/recruiter/dashboard" : "/auth/signin"} className="mt-8 inline-flex h-11 items-center gap-2 rounded-lg bg-foreground px-5 text-sm font-bold text-background hover:opacity-90 active:translate-y-px">
               Open recruiter workspace <ArrowRight className="size-4" />
             </Link>
           </div>

@@ -73,11 +73,11 @@ export async function AppHeader() {
                 <div className="my-1 h-px bg-border" />
                 <Link href="/student/profile" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted"><UserRound className="size-4" /> Profile</Link>
                 <Link href="/recruiter/dashboard" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted"><BriefcaseBusiness className="size-4" /> Recruiter workspace</Link>
-                <Link href="/api/auth/signout" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10"><LogOut className="size-4" /> Sign out</Link>
+                <Link href="/auth/signout" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10"><LogOut className="size-4" /> Sign out</Link>
               </div>
             </details>
           ) : (
-            <Link href="/api/auth/signin" className="inline-flex h-10 items-center rounded-lg bg-foreground px-4 text-sm font-bold text-background transition-transform hover:opacity-90 active:translate-y-px">
+            <Link href="/auth/signin" className="inline-flex h-10 items-center rounded-lg bg-foreground px-4 text-sm font-bold text-background transition-transform hover:opacity-90 active:translate-y-px">
               Sign in
             </Link>
           )}
