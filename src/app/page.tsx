@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { BrandMark } from "@/components/brand-mark";
+import BlurText from "@/components/BlurText";
+import SplitText from "@/components/SplitText";
 import {
   ArrowRight,
   BadgeCheck,
@@ -27,12 +29,26 @@ export default async function Home() {
       <section className="app-container grid min-h-[calc(100dvh-4rem)] items-center gap-10 py-12 lg:grid-cols-[0.85fr_1.15fr] lg:py-16">
         <div className="relative z-10">
           <p className="eyebrow">Skill-first career matching</p>
-          <h1 className="mt-5 max-w-2xl font-heading text-6xl leading-[0.92] tracking-wide text-foreground sm:text-7xl lg:text-8xl">
-            FIND WORK THAT FITS.
-          </h1>
-          <p className="mt-6 max-w-xl text-lg leading-7 text-muted-foreground">
-            CredX turns your real skills into clear job matches, so your next move starts with evidence.
-          </p>
+          <SplitText
+            text="FIND WORK THAT FITS."
+            tag="h1"
+            splitType="words"
+            textAlign="left"
+            delay={95}
+            duration={0.9}
+            rootMargin="0px"
+            from={{ opacity: 0, y: 52 }}
+            to={{ opacity: 1, y: 0 }}
+            className="mt-5 max-w-2xl font-heading text-6xl leading-[0.92] tracking-wide text-foreground sm:text-7xl lg:text-8xl"
+          />
+          <BlurText
+            text="CredX turns your real skills into clear job matches, so your next move starts with evidence."
+            animateBy="words"
+            direction="bottom"
+            delay={34}
+            stepDuration={0.28}
+            className="mt-6 max-w-xl text-lg leading-7 text-muted-foreground"
+          />
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href={primaryHref} className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-6 text-sm font-bold text-primary-foreground transition-transform hover:brightness-95 active:translate-y-px">
               {session ? "Open matches" : "Start matching"} <ArrowRight className="size-4" />
