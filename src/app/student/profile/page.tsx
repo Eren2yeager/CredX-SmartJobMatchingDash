@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Check, FileText, LoaderCircle, Plus, Upload, X } from "lucide-react";
+import { Check, ExternalLink, FileText, LoaderCircle, Plus, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type WorkAuth = "citizen" | "permanent_resident" | "visa_sponsorship_required" | "other";
@@ -27,6 +27,7 @@ export default function ProfilePage() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [resumeViewerOpen, setResumeViewerOpen] = useState(false);
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileRef = useRef<HTMLInputElement>(null);
@@ -55,17 +56,18 @@ export default function ProfilePage() {
     setSkillInput("");
   }
 
+  const resumeKind = detectResumeKindFromUrl(resumeUrl);
+
   async function uploadResume(file?: File) {
     if (!file) return;
     const acceptedTypes = [
-      "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "image/jpeg",
       "image/png",
       "image/webp",
     ];
     if (!acceptedTypes.includes(file.type)) {
-      setMessage({ tone: "error", text: "Please choose a PDF, DOCX, PNG, JPEG, or WebP resume." });
+      setMessage({ tone: "error", text: "Please choose a DOCX, PNG, JPEG, or WebP resume." });
       return;
     }
     setUploading(true);
@@ -79,8 +81,12 @@ export default function ProfilePage() {
       setResumeUrl(data.resumeUrl);
       setSuggestions((data.parsedSkills as string[]).filter((skill) => !skills.includes(skill)));
       setMessage({
-        tone: "success",
-        text: data.analysisWarning ?? "Resume uploaded. Review the suggested skills before saving.",
+        tone: data.analysisWarning ? "error" : "success",
+        text:
+          data.analysisWarning ??
+          ((data.parsedSkills as string[]).length > 0
+            ? "Resume uploaded. Review the suggested skills before saving."
+            : "Resume uploaded, but no skills were found to suggest."),
       });
     } catch (error) {
       setMessage({ tone: "error", text: error instanceof Error ? error.message : "Resume upload failed." });
@@ -163,13 +169,63 @@ export default function ProfilePage() {
         <aside className="surface p-6 lg:sticky lg:top-24">
           <span className="grid size-11 place-items-center rounded-xl bg-accent text-accent-foreground"><FileText className="size-5" /></span>
           <h2 className="mt-5 text-xl font-bold">Resume intelligence</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">Upload a PDF, DOCX, or clear resume image and CredX will suggest skills for you to approve.</p>
-          <input ref={fileRef} type="file" accept=".pdf,.docx,image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => uploadResume(event.target.files?.[0])} />
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Upload a DOCX or clear resume image and CredX will suggest skills for you to approve.</p>
+          <input ref={fileRef} type="file" accept=".docx,image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => uploadResume(event.target.files?.[0])} />
           <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()} className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card text-sm font-bold hover:bg-muted disabled:opacity-60">{uploading ? <LoaderCircle className="size-4 animate-spin" /> : <Upload className="size-4" />}{uploading ? "Analyzing resume" : resumeUrl ? "Replace resume" : "Upload resume"}</button>
-          {resumeUrl && <a href={resumeUrl} target="_blank" rel="noreferrer" className="mt-3 block text-center text-xs font-bold text-primary hover:underline">View current resume</a>}
-          <div className="mt-6 rounded-xl bg-muted p-4"><p className="text-xs font-bold">Before you upload</p><ul className="mt-2 space-y-1.5 text-xs leading-5 text-muted-foreground"><li>PDF, DOCX, PNG, JPEG, or WebP</li><li>Maximum file size: 5 MB</li><li>Images should be clear and easy to read</li><li>You choose which suggestions to keep</li></ul></div>
+          {resumeUrl && <div className="mt-3 flex items-center justify-center gap-4 text-xs font-bold text-primary"><button type="button" onClick={() => setResumeViewerOpen(true)} className="hover:underline">View current resume</button><a href={resumeUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:underline">Open in new tab <ExternalLink className="size-3" /></a></div>}
+          <div className="mt-6 rounded-xl bg-muted p-4"><p className="text-xs font-bold">Before you upload</p><ul className="mt-2 space-y-1.5 text-xs leading-5 text-muted-foreground"><li>DOCX, PNG, JPEG, or WebP</li><li>Maximum file size: 5 MB</li><li>Images should be clear and easy to read</li><li>You choose which suggestions to keep</li></ul></div>
         </aside>
       </form>
+
+      {resumeViewerOpen && resumeUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-background shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-6">
+              <div>
+                <h2 className="text-lg font-bold">Resume preview</h2>
+                <p className="text-xs text-muted-foreground">Review the uploaded resume without leaving your profile.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <a href={resumeUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">Open in new tab <ExternalLink className="size-4" /></a>
+                <button type="button" onClick={() => setResumeViewerOpen(false)} className="rounded-lg border border-border p-2 hover:bg-muted" aria-label="Close resume preview"><X className="size-4" /></button>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 bg-muted/40">
+              {resumeKind === "image" ? (
+                <div className="flex h-full items-start justify-center overflow-auto p-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={resumeUrl} alt="Uploaded resume preview" className="h-auto max-w-full rounded-xl bg-white shadow-lg" />
+                </div>
+              ) : resumeKind === "docx" ? (
+                <div className="flex h-full items-center justify-center p-6">
+                  <div className="max-w-lg rounded-2xl bg-background p-6 text-center shadow-lg">
+                    <p className="text-lg font-bold">DOCX preview is not available inline</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">Browsers usually download `.docx` files instead of rendering them inside a dialog. Use the button below to open the uploaded resume in a new tab or download it directly.</p>
+                    <a href={resumeUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:brightness-95">Open resume <ExternalLink className="size-4" /></a>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-full items-center justify-center p-6">
+                  <div className="max-w-lg rounded-2xl bg-background p-6 text-center shadow-lg">
+                    <p className="text-lg font-bold">Preview unavailable</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">This resume format cannot be rendered safely inside the app preview.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
+}
+
+function detectResumeKindFromUrl(url: string): "docx" | "image" | "other" {
+  const lower = url.toLowerCase();
+  if (lower.includes(".png") || lower.includes(".jpg") || lower.includes(".jpeg") || lower.includes(".webp")) {
+    return "image";
+  }
+  if (lower.includes(".docx")) return "docx";
+  return "other";
 }

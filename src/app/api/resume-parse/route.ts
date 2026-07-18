@@ -20,18 +20,18 @@ export async function POST(req: NextRequest) {
   const buffer = Buffer.from(await file.arrayBuffer());
 
   try {
-    const { resumeUrl, parsedSkills, analysisWarning } = await Resume_Parser.parseResume(
+    const { resumeUrl, parsedSkills, extractedData, analysisWarning } = await Resume_Parser.parseResume(
       buffer,
       file.type,
       file.size,
       file.name
     );
-    return Response.json({ resumeUrl, parsedSkills, analysisWarning }, { status: 200 });
+    return Response.json({ resumeUrl, parsedSkills, extractedData, analysisWarning }, { status: 200 });
   } catch (err) {
     if (err instanceof Resume_Parser.ResumeValidationError) {
       return Response.json({ error: err.message }, { status: 400 });
     }
-    // Cloudinary failure or other unexpected error → 502
+
     console.error("Resume upload failed", err);
     if (err instanceof ResumeStorageError) {
       return Response.json(
@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
         { status: 502 }
       );
     }
+
     return Response.json(
       { error: "Resume processing failed. Please try again." },
       { status: 500 }

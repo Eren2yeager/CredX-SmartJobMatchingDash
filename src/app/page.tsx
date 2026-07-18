@@ -96,7 +96,7 @@ export default async function Home() {
           <article className="surface relative overflow-hidden p-7 sm:p-10">
             <FileSearch className="size-8 text-primary" />
             <h3 className="mt-16 max-w-lg text-3xl font-bold tracking-tight">Bring your experience into focus.</h3>
-            <p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">Upload a PDF resume, review extracted skills, and keep full control over what appears on your profile.</p>
+            <p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">Upload a DOCX resume or clear resume image, review extracted skills, and keep full control over what appears on your profile.</p>
             <div className="mt-8 flex flex-wrap gap-2">
               {["typescript", "product thinking", "data analysis", "communication"].map((skill) => (
                 <span key={skill} className="rounded-lg bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground">{skill}</span>
