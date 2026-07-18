@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { BrandMark } from "@/components/brand-mark";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { BriefcaseBusiness, ChevronDown, LogOut, UserRound } from "lucide-react";
 
 const studentLinks = [
@@ -54,6 +55,7 @@ export async function AppHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {session ? (
             <details className="group relative">
               <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-border bg-card py-1.5 pl-1.5 pr-3 text-sm font-semibold hover:border-foreground/25">
