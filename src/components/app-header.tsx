@@ -20,7 +20,7 @@ export async function AppHeader() {
   const session = await auth();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/80 bg-background/92 backdrop-blur-xl">
+    <header className="sticky top-0 z-30  bg-background/92 backdrop-blur-xl">
       <div className="app-container flex h-16 items-center justify-between gap-4">
         <BrandMark />
 
