@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models, Types } from "mongoose";
+import { Schema, model, models, Types } from "mongoose";
 
 export interface IMatch {
   _id: Types.ObjectId;

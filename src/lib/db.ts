@@ -1,9 +1,19 @@
 import mongoose from "mongoose";
 
-// ponytail: global cache survives Next.js hot-reload; ceiling: single process only
-let cached: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null } =
-  (global as any).__mongooseCache ?? { conn: null, promise: null };
-(global as any).__mongooseCache = cached;
+// Global cache survives Next.js hot reload; ceiling: single process only.
+type MongooseCache = {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+};
+
+const globalWithMongoose = globalThis as typeof globalThis & {
+  __mongooseCache?: MongooseCache;
+};
+const cached: MongooseCache = globalWithMongoose.__mongooseCache ?? {
+  conn: null,
+  promise: null,
+};
+globalWithMongoose.__mongooseCache = cached;
 
 export async function connectDB(): Promise<typeof mongoose.connection> {
   if (cached.conn) return cached.conn.connection;
