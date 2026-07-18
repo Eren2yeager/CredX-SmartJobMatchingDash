@@ -71,7 +71,10 @@ export default function ProfilePage() {
       if (!response.ok) throw new Error(data.error ?? "Resume upload failed.");
       setResumeUrl(data.resumeUrl);
       setSuggestions((data.parsedSkills as string[]).filter((skill) => !skills.includes(skill)));
-      setMessage({ tone: "success", text: "Resume uploaded. Review the suggested skills before saving." });
+      setMessage({
+        tone: "success",
+        text: data.analysisWarning ?? "Resume uploaded. Review the suggested skills before saving.",
+      });
     } catch (error) {
       setMessage({ tone: "error", text: error instanceof Error ? error.message : "Resume upload failed." });
     } finally {
