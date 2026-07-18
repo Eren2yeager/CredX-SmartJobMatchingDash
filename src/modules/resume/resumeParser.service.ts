@@ -7,6 +7,7 @@ import { uploadResume } from "@/lib/cloudinary";
 export interface ParseResumeResult {
   resumeUrl: string;
   parsedSkills: string[];
+  analysisWarning?: string;
 }
 
 export class ResumeValidationError extends Error {
@@ -41,17 +42,28 @@ export async function parseResume(
 
   // 4. Call Groq — failures are fully swallowed (Req 8.5)
   let parsedSkills: string[] = [];
+  let analysisWarning: string | undefined;
   try {
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    if (!process.env.GROQ_API_KEY) throw new Error("GROQ_API_KEY is missing");
+
+    const groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+      maxRetries: 1,
+    });
     const completion = await groq.chat.completions.create(
       {
-        model: "llama3-8b-8192",
+        model: "openai/gpt-oss-20b",
         messages: [
+          {
+            role: "system",
+            content: "You extract technical skills from resumes and return valid JSON only.",
+          },
           {
             role: "user",
             content: `Extract a JSON array of technical skills from this resume text. Respond with ONLY valid JSON in this exact format: {"skills": ["skill1", "skill2"]}. No markdown, no explanation.\n\n${rawText.slice(0, 8000)}`,
           },
         ],
+        response_format: { type: "json_object" },
         temperature: 0,
       },
       { timeout: 10_000 } // Req 8.5: fail after 10 s
@@ -59,12 +71,14 @@ export async function parseResume(
 
     const raw = completion.choices[0]?.message?.content ?? "";
     parsedSkills = parseGroqResponse(raw);
-  } catch {
+  } catch (error) {
+    console.error("Resume analysis failed", error);
     // Groq failure must NEVER throw (Req 8.5) — return empty skills
     parsedSkills = [];
+    analysisWarning = "Resume uploaded, but skill analysis is temporarily unavailable.";
   }
 
-  return { resumeUrl, parsedSkills };
+  return { resumeUrl, parsedSkills, analysisWarning };
 }
 
 // ── Defensive Groq response parser (Req 8.4) ─────────────────────────────────
