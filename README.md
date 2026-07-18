@@ -42,10 +42,10 @@ A hard cap is applied to the final score if work authorization is incompatible, 
 ### Bonus / Stretch Goals
 | Goal | Status |
 |---|---|
-| Explain-the-match tooltip | ✅ Delivered via the per-match skill/GPA/work-auth breakdown shown with every score. |
-| Recruiter-side view of matching students | ✅ Delivered via the Applicant Pipeline, which lists every applicant's profile and score. |
-| Sort listings by match score | ✅ Delivered — the `/api/match` results are returned as a ranked list ordered by score, not just filtered. |
-| Application tracking | ✅ Implemented as a core feature rather than a stretch add-on. |
+| Explain-the-match tooltip |  Delivered via the per-match skill/GPA/work-auth breakdown shown with every score. |
+| Recruiter-side view of matching students |  Delivered via the Applicant Pipeline, which lists every applicant's profile and score. |
+| Sort listings by match score |  Delivered — the `/api/match` results are returned as a ranked list ordered by score, not just filtered. |
+| Application tracking |  Implemented as a core feature rather than a stretch add-on. |
 
 ## Tech Stack
 - **Framework:** Next.js 16 (App Router)
@@ -95,6 +95,7 @@ CLOUDINARY_API_SECRET="your_cloudinary_api_secret"
 # Groq API (for AI resume parsing)
 GROQ_API_KEY="your_groq_api_key"
 ```
+### System Architecture
 <img width="5924" height="3444" alt="image" src="https://github.com/user-attachments/assets/ed4b82e2-1273-4865-a2a2-5d2e9588e68d" />
 
 
