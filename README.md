@@ -7,7 +7,7 @@
 
   CredX is a full-stack, explainable job and internship matching platform that turns a student's skills, GPA, and work-authorization status into ranked recommendations—and shows exactly why every role matched.
 
-  [View the live application](https://cred-x-smart-job-matching-dash.vercel.app/) · [Explore the product](#product-walkthrough) · [Understand the algorithm](#how-the-matching-engine-works) · [Run locally](#run-credx-locally)
+  [View the live application](https://cred-x-smart-job-matching-dash.vercel.app/) · [See the presentation](#project-presentation) · [Explore the product](#product-walkthrough) · [Understand the algorithm](#how-the-matching-engine-works) · [Run locally](#run-credx-locally)
 
   [![Open CredX](https://img.shields.io/badge/OPEN_LIVE_PROJECT-E4512F?style=for-the-badge&logo=vercel&logoColor=white)](https://cred-x-smart-job-matching-dash.vercel.app/)
 
@@ -296,6 +296,16 @@ src/
 - Server-side authentication and role-aware route access.
 - SEO metadata, Open Graph data, JSON-LD, sitemap, robots policy, and PWA manifest.
 - Deterministic matching tests covering boundaries and invariants.
+
+## Project presentation
+
+For a visual explanation of the problem, product journey, matching algorithm, system architecture, student experience, and recruiter workflow, open the complete CredX presentation:
+
+### **[View the presentation online →](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2FEren2yeager%2FCredX-SmartJobMatchingDash%2Fmaster%2Foutput%2FCredX_Project_Presentation.pptx)**
+
+[Open the PowerPoint on GitHub](https://github.com/Eren2yeager/CredX-SmartJobMatchingDash/blob/master/output/CredX_Project_Presentation.pptx) · [Download the original `.pptx`](output/CredX_Project_Presentation.pptx?raw=1)
+
+> GitHub does not display PowerPoint slides directly in every browser. Use **View the presentation online** for an in-browser slideshow, or download the original file from GitHub.
 
 ## Explore the working product
 
