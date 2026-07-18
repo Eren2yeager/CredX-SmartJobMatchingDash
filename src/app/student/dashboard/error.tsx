@@ -1,35 +1,20 @@
 "use client";
 
 import { useEffect } from "react";
+import { CircleAlert } from "lucide-react";
 
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function DashboardError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error("[student/dashboard] error boundary caught:", error);
   }, [error]);
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8 md:px-10">
-      <div className="mx-auto max-w-4xl">
-        <div className="flex flex-col items-center gap-4 py-20 text-center">
-          <p className="text-lg font-medium text-foreground">
-            Something went wrong
-          </p>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            {error.message || "An unexpected error occurred loading your matches."}
-          </p>
-          <button
-            onClick={reset}
-            className="mt-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80 transition-colors"
-          >
-            Try again
-          </button>
-        </div>
+    <main className="app-container py-14">
+      <div className="surface flex min-h-80 flex-col items-center justify-center p-8 text-center">
+        <span className="grid size-12 place-items-center rounded-xl bg-destructive/10 text-destructive"><CircleAlert className="size-5" /></span>
+        <h1 className="mt-5 text-xl font-bold">Your matches could not load</h1>
+        <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{error.message || "An unexpected problem interrupted this page."}</p>
+        <button onClick={reset} className="mt-6 inline-flex h-10 items-center rounded-lg bg-foreground px-4 text-sm font-bold text-background hover:opacity-90 active:translate-y-px">Try again</button>
       </div>
     </main>
   );

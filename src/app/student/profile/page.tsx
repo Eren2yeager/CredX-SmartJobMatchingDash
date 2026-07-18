@@ -1,529 +1,165 @@
 "use client";
 
-import { useState, useEffect, useRef, KeyboardEvent } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { Check, FileText, LoaderCircle, Plus, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { X, Plus, Upload, Loader2, Check } from "lucide-react";
 
-type WorkAuthStatus =
-  | "citizen"
-  | "permanent_resident"
-  | "visa_sponsorship_required"
-  | "other";
+type WorkAuth = "citizen" | "permanent_resident" | "visa_sponsorship_required" | "other";
+type Profile = { skills: string[]; gpa?: number; workAuthStatus?: WorkAuth; location?: string; resumeUrl?: string; resumeParsedSkills?: string[] };
 
-interface StudentProfile {
-  _id: string;
-  userId: string;
-  skills: string[];
-  gpa?: number;
-  workAuthStatus?: WorkAuthStatus;
-  location?: string;
-  resumeUrl?: string;
-  resumeParsedSkills: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-const WORK_AUTH_LABELS: Record<WorkAuthStatus, string> = {
+const authLabels: Record<WorkAuth, string> = {
   citizen: "Citizen",
-  permanent_resident: "Permanent Resident",
-  visa_sponsorship_required: "Visa Sponsorship Required",
+  permanent_resident: "Permanent resident",
+  visa_sponsorship_required: "Visa sponsorship required",
   other: "Other",
 };
 
-export default function StudentProfilePage() {
-  // Profile fetch state
-  const [loadingProfile, setLoadingProfile] = useState(true);
-  const [profileExists, setProfileExists] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-
-  // Form fields
+export default function ProfilePage() {
+  const [loading, setLoading] = useState(true);
+  const [exists, setExists] = useState(false);
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
   const [gpa, setGpa] = useState("");
-  const [workAuthStatus, setWorkAuthStatus] = useState<WorkAuthStatus | "">("");
+  const [workAuthStatus, setWorkAuthStatus] = useState<WorkAuth | "">("");
   const [location, setLocation] = useState("");
-  const [resumeUrl, setResumeUrl] = useState<string | undefined>(undefined);
-
-  // Resume parse state
-  const [resumeUploading, setResumeUploading] = useState(false);
-  const [resumeError, setResumeError] = useState<string | null>(null);
-  const [suggestedSkills, setSuggestedSkills] = useState<string[]>([]);
-  const [acceptedSuggestions, setAcceptedSuggestions] = useState<Set<string>>(
-    new Set()
-  );
-
-  // Submit state
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // ── Load profile on mount ─────────────────────────────────────────────────
+  const [resumeUrl, setResumeUrl] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/profile")
-      .then(async (res) => {
-        if (res.status === 404) {
-          setProfileExists(false);
-          return;
-        }
-        if (!res.ok) {
-          setFetchError("Failed to load profile.");
-          return;
-        }
-        const data: StudentProfile = await res.json();
-        setProfileExists(true);
-        setSkills(data.skills ?? []);
-        setGpa(data.gpa != null ? String(data.gpa) : "");
-        setWorkAuthStatus(data.workAuthStatus ?? "");
-        setLocation(data.location ?? "");
-        setResumeUrl(data.resumeUrl);
-        // Show previously parsed skills that haven't been merged yet
-        const unmerged = (data.resumeParsedSkills ?? []).filter(
-          (s) => !data.skills.includes(s)
-        );
-        setSuggestedSkills(unmerged);
+      .then(async (response) => {
+        if (response.status === 404) return;
+        if (!response.ok) throw new Error();
+        const profile = (await response.json()) as Profile;
+        setExists(true);
+        setSkills(profile.skills ?? []);
+        setGpa(profile.gpa === undefined ? "" : String(profile.gpa));
+        setWorkAuthStatus(profile.workAuthStatus ?? "");
+        setLocation(profile.location ?? "");
+        setResumeUrl(profile.resumeUrl ?? "");
+        setSuggestions((profile.resumeParsedSkills ?? []).filter((skill) => !profile.skills.includes(skill)));
       })
-      .catch(() => setFetchError("Network error. Please try again."))
-      .finally(() => setLoadingProfile(false));
+      .catch(() => setMessage({ tone: "error", text: "We could not load your profile. Refresh to try again." }))
+      .finally(() => setLoading(false));
   }, []);
 
-  // ── Skill tag input ───────────────────────────────────────────────────────
-
-  function addSkill(raw: string) {
-    const skill = raw.trim().toLowerCase();
-    if (skill && !skills.includes(skill)) {
-      setSkills((prev) => [...prev, skill]);
-    }
+  function addSkill(value: string) {
+    const skill = value.trim().toLowerCase();
+    if (skill && !skills.includes(skill)) setSkills((current) => [...current, skill]);
     setSkillInput("");
   }
 
-  function handleSkillKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      addSkill(skillInput);
-    } else if (e.key === "Backspace" && skillInput === "" && skills.length > 0) {
-      setSkills((prev) => prev.slice(0, -1));
-    }
-  }
-
-  function removeSkill(skill: string) {
-    setSkills((prev) => prev.filter((s) => s !== skill));
-  }
-
-  // ── Suggested skills (from resume parse) ─────────────────────────────────
-
-  function acceptSuggestion(skill: string) {
-    setAcceptedSuggestions((prev) => new Set(prev).add(skill));
-    if (!skills.includes(skill)) {
-      setSkills((prev) => [...prev, skill]);
-    }
-  }
-
-  function acceptAllSuggestions() {
-    const toAdd = suggestedSkills.filter((s) => !skills.includes(s));
-    setSkills((prev) => [...prev, ...toAdd]);
-    setAcceptedSuggestions(new Set(suggestedSkills));
-  }
-
-  // ── Resume upload ─────────────────────────────────────────────────────────
-
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function uploadResume(file?: File) {
     if (!file) return;
-
-    setResumeError(null);
-    setResumeUploading(true);
-    setSuggestedSkills([]);
-    setAcceptedSuggestions(new Set());
-
+    if (file.type !== "application/pdf") {
+      setMessage({ tone: "error", text: "Please choose a PDF resume." });
+      return;
+    }
+    setUploading(true);
+    setMessage(null);
+    const body = new FormData();
+    body.append("resume", file);
     try {
-      const formData = new FormData();
-      formData.append("resume", file);
-
-      const res = await fetch("/api/resume-parse", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setResumeError(data.error ?? "Resume upload failed.");
-        return;
-      }
-
-      const { resumeUrl: url, parsedSkills } = await res.json();
-      setResumeUrl(url);
-      // Only show suggestions for skills not already in the list
-      setSuggestedSkills(
-        (parsedSkills as string[]).filter((s) => !skills.includes(s))
-      );
-    } catch {
-      setResumeError("Network error during upload.");
+      const response = await fetch("/api/resume-parse", { method: "POST", body });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "Resume upload failed.");
+      setResumeUrl(data.resumeUrl);
+      setSuggestions((data.parsedSkills as string[]).filter((skill) => !skills.includes(skill)));
+      setMessage({ tone: "success", text: "Resume uploaded. Review the suggested skills before saving." });
+    } catch (error) {
+      setMessage({ tone: "error", text: error instanceof Error ? error.message : "Resume upload failed." });
     } finally {
-      setResumeUploading(false);
-      // Reset so the same file can be re-uploaded if needed
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   }
 
-  // ── Form submit ───────────────────────────────────────────────────────────
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmitError(null);
-    setFieldErrors({});
-    setSubmitSuccess(false);
-    setSubmitting(true);
-
-    const body: Record<string, unknown> = {
-      skills,
-      gpa: gpa !== "" ? parseFloat(gpa) : undefined,
-      workAuthStatus: workAuthStatus || undefined,
-      location: location || undefined,
-    };
-
-    // Include resumeUrl in update if we have one
-    if (resumeUrl) body.resumeUrl = resumeUrl;
-
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setErrors({});
+    setMessage(null);
     try {
-      const res = await fetch("/api/profile", {
-        method: profileExists ? "PATCH" : "POST",
+      const response = await fetch("/api/profile", {
+        method: exists ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          skills,
+          gpa: gpa ? Number(gpa) : undefined,
+          workAuthStatus: workAuthStatus || undefined,
+          location: location || undefined,
+          resumeUrl: resumeUrl || undefined,
+          resumeParsedSkills: suggestions,
+        }),
       });
-
-      if (res.status === 422) {
-        const data = await res.json();
-        setFieldErrors(data.fields ?? {});
-        setSubmitError(data.error ?? "Validation failed.");
-        return;
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setErrors(data.fields ?? {});
+        throw new Error(data.error ?? "Your profile could not be saved.");
       }
-
-      if (res.status === 409) {
-        // Profile already exists — switch to update mode and retry
-        setProfileExists(true);
-        setSubmitError("Profile already exists. Retrying as update…");
-        return;
-      }
-
-      if (!res.ok) {
-        setSubmitError("Something went wrong. Please try again.");
-        return;
-      }
-
-      setProfileExists(true);
-      setSubmitSuccess(true);
-    } catch {
-      setSubmitError("Network error. Please try again.");
+      setExists(true);
+      setMessage({ tone: "success", text: "Profile saved. Your matches are being refreshed." });
+    } catch (error) {
+      setMessage({ tone: "error", text: error instanceof Error ? error.message : "Your profile could not be saved." });
     } finally {
-      setSubmitting(false);
+      setSaving(false);
     }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
-  if (loadingProfile) {
-    return (
-      <main className="min-h-screen bg-background p-6 md:p-10">
-        <div className="mx-auto max-w-xl animate-pulse space-y-4">
-          <div className="h-7 w-48 rounded bg-muted" />
-          <div className="h-4 w-64 rounded bg-muted" />
-          <div className="mt-6 space-y-3">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-10 rounded-lg bg-muted" />
-            ))}
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (fetchError) {
-    return (
-      <main className="min-h-screen bg-background p-6 md:p-10">
-        <div className="mx-auto max-w-xl">
-          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-            {fetchError}
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  const disabled = submitting;
+  if (loading) return <main className="app-container py-14"><div className="skeleton h-12 w-72" /><div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]"><div className="skeleton h-[620px]" /><div className="skeleton h-80" /></div></main>;
 
   return (
-    <main className="min-h-screen bg-background p-6 md:p-10">
-      <div className="mx-auto max-w-xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-foreground">
-            {profileExists ? "Update Profile" : "Create Profile"}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {profileExists
-              ? "Keep your skills and details up to date."
-              : "Tell us about yourself to get matched with listings."}
-          </p>
+    <main className="app-container py-10 sm:py-14">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-heading text-5xl tracking-wide sm:text-6xl">YOUR PROFILE</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">Keep your evidence current. Small updates can change which roles rise to the top.</p>
+        </div>
+        <Link href="/student/dashboard" className="text-sm font-bold text-primary hover:underline">View matches</Link>
+      </div>
+
+      <form onSubmit={save} className="mt-8 grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
+        <div className="surface space-y-7 p-6 sm:p-8">
+          <div className="space-y-2">
+            <label className="label" htmlFor="skills">Skills</label>
+            <div className={cn("flex min-h-12 flex-wrap gap-2 rounded-lg border bg-card p-2", errors.skills ? "border-destructive" : "border-input", "focus-within:ring-2 focus-within:ring-ring")}>
+              {skills.map((skill) => <span key={skill} className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-2.5 py-1.5 text-xs font-bold">{skill}<button type="button" onClick={() => setSkills((items) => items.filter((item) => item !== skill))} aria-label={`Remove ${skill}`} className="rounded hover:text-destructive"><X className="size-3.5" /></button></span>)}
+              <input id="skills" value={skillInput} onChange={(event) => setSkillInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === ",") { event.preventDefault(); addSkill(skillInput); } }} onBlur={() => addSkill(skillInput)} placeholder={skills.length ? "Add another skill" : "Type a skill and press Enter"} className="min-w-40 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground" />
+            </div>
+            <p className="helper">Use specific skills such as React, SQL, user research, or financial modeling.</p>
+            {errors.skills && <p className="text-xs font-semibold text-destructive">{errors.skills}</p>}
+          </div>
+
+          {suggestions.length > 0 && <div className="rounded-xl bg-accent p-4"><div className="flex items-center justify-between gap-4"><p className="text-sm font-bold text-accent-foreground">Suggested from your resume</p><button type="button" onClick={() => { setSkills((items) => [...new Set([...items, ...suggestions])]); setSuggestions([]); }} className="text-xs font-bold text-accent-foreground hover:underline">Add all</button></div><div className="mt-3 flex flex-wrap gap-2">{suggestions.map((skill) => <button key={skill} type="button" onClick={() => { addSkill(skill); setSuggestions((items) => items.filter((item) => item !== skill)); }} className="inline-flex items-center gap-1 rounded-lg bg-card px-2.5 py-1.5 text-xs font-bold"><Plus className="size-3" />{skill}</button>)}</div></div>}
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2"><label className="label" htmlFor="gpa">GPA</label><input id="gpa" className="field" type="number" min="0" max="10" step="0.1" value={gpa} onChange={(event) => setGpa(event.target.value)} placeholder="8.4" /><p className="helper">Use your GPA on a 10-point scale.</p>{errors.gpa && <p className="text-xs font-semibold text-destructive">{errors.gpa}</p>}</div>
+            <div className="space-y-2"><label className="label" htmlFor="location">Preferred location</label><input id="location" className="field" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Bengaluru or remote" /><p className="helper">Add a city, region, or remote preference.</p></div>
+          </div>
+
+          <div className="space-y-2"><label className="label" htmlFor="workAuth">Work authorization</label><select id="workAuth" className="field" value={workAuthStatus} onChange={(event) => setWorkAuthStatus(event.target.value as WorkAuth | "")}><option value="">Choose your status</option>{Object.entries(authLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><p className="helper">This prevents roles without compatible sponsorship from being ranked too highly.</p>{errors.workAuthStatus && <p className="text-xs font-semibold text-destructive">{errors.workAuthStatus}</p>}</div>
+
+          {message && <div role="status" className={cn("flex gap-2 rounded-xl p-4 text-sm font-semibold", message.tone === "success" ? "bg-success-soft text-success" : "bg-destructive/10 text-destructive")}>{message.tone === "success" ? <Check className="size-5 shrink-0" /> : <X className="size-5 shrink-0" />}{message.text}</div>}
+
+          <button type="submit" disabled={saving} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-bold text-primary-foreground hover:brightness-95 active:translate-y-px disabled:opacity-60">{saving && <LoaderCircle className="size-4 animate-spin" />}{saving ? "Saving profile" : exists ? "Save changes" : "Create profile"}</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* ── Skills ──────────────────────────────────────────────────── */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Skills
-            </label>
-            <div
-              className={cn(
-                "flex min-h-[42px] flex-wrap gap-1.5 rounded-lg border bg-background px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-ring/50",
-                fieldErrors.skills ? "border-destructive" : "border-input"
-              )}
-            >
-              {skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
-                >
-                  {skill}
-                  <button
-                    type="button"
-                    onClick={() => removeSkill(skill)}
-                    disabled={disabled}
-                    className="hover:text-destructive disabled:pointer-events-none"
-                    aria-label={`Remove ${skill}`}
-                  >
-                    <X className="size-3" />
-                  </button>
-                </span>
-              ))}
-              <input
-                type="text"
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                onKeyDown={handleSkillKeyDown}
-                onBlur={() => skillInput.trim() && addSkill(skillInput)}
-                placeholder={skills.length === 0 ? "Type a skill and press Enter" : ""}
-                disabled={disabled}
-                className="min-w-[140px] flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
-              />
-            </div>
-            {fieldErrors.skills && (
-              <p className="mt-1 text-xs text-destructive">{fieldErrors.skills}</p>
-            )}
-            <p className="mt-1 text-xs text-muted-foreground">
-              Press Enter or comma to add a skill.
-            </p>
-          </div>
-
-          {/* ── GPA ─────────────────────────────────────────────────────── */}
-          <div>
-            <label
-              htmlFor="gpa"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
-              GPA <span className="text-muted-foreground font-normal">(0.0 – 10.0)</span>
-            </label>
-            <input
-              id="gpa"
-              type="number"
-              min={0}
-              max={10}
-              step={0.1}
-              value={gpa}
-              onChange={(e) => setGpa(e.target.value)}
-              disabled={disabled}
-              placeholder="e.g. 8.5"
-              className={cn(
-                "h-10 w-full rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
-                fieldErrors.gpa ? "border-destructive" : "border-input"
-              )}
-            />
-            {fieldErrors.gpa && (
-              <p className="mt-1 text-xs text-destructive">{fieldErrors.gpa}</p>
-            )}
-          </div>
-
-          {/* ── Work Auth Status ─────────────────────────────────────────── */}
-          <div>
-            <label
-              htmlFor="workAuthStatus"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
-              Work Authorization
-            </label>
-            <select
-              id="workAuthStatus"
-              value={workAuthStatus}
-              onChange={(e) =>
-                setWorkAuthStatus(e.target.value as WorkAuthStatus | "")
-              }
-              disabled={disabled}
-              className={cn(
-                "h-10 w-full rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
-                fieldErrors.workAuthStatus ? "border-destructive" : "border-input"
-              )}
-            >
-              <option value="">Select status…</option>
-              {(Object.keys(WORK_AUTH_LABELS) as WorkAuthStatus[]).map((val) => (
-                <option key={val} value={val}>
-                  {WORK_AUTH_LABELS[val]}
-                </option>
-              ))}
-            </select>
-            {fieldErrors.workAuthStatus && (
-              <p className="mt-1 text-xs text-destructive">
-                {fieldErrors.workAuthStatus}
-              </p>
-            )}
-          </div>
-
-          {/* ── Location ─────────────────────────────────────────────────── */}
-          <div>
-            <label
-              htmlFor="location"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
-              Location{" "}
-              <span className="text-muted-foreground font-normal">(optional)</span>
-            </label>
-            <input
-              id="location"
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              disabled={disabled}
-              placeholder="e.g. San Francisco, CA"
-              className={cn(
-                "h-10 w-full rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
-                fieldErrors.location ? "border-destructive" : "border-input"
-              )}
-            />
-            {fieldErrors.location && (
-              <p className="mt-1 text-xs text-destructive">{fieldErrors.location}</p>
-            )}
-          </div>
-
-          {/* ── Resume Upload ─────────────────────────────────────────────── */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Resume{" "}
-              <span className="text-muted-foreground font-normal">(PDF, optional)</span>
-            </label>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={disabled || resumeUploading}
-                className={cn(
-                  "inline-flex h-10 items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                )}
-              >
-                {resumeUploading ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Upload className="size-4" />
-                )}
-                {resumeUploading ? "Uploading…" : resumeUrl ? "Replace Resume" : "Upload Resume"}
-              </button>
-              {resumeUrl && !resumeUploading && (
-                <a
-                  href={resumeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary underline-offset-2 hover:underline"
-                >
-                  View current
-                </a>
-              )}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            {resumeError && (
-              <p className="mt-1.5 text-xs text-destructive">{resumeError}</p>
-            )}
-          </div>
-
-          {/* ── Suggested skills from resume ──────────────────────────────── */}
-          {suggestedSkills.length > 0 && (
-            <div className="rounded-lg border border-border bg-muted/40 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-medium text-foreground">
-                  Suggested skills from your resume:
-                </p>
-                <button
-                  type="button"
-                  onClick={acceptAllSuggestions}
-                  className="text-xs font-medium text-primary hover:underline underline-offset-2"
-                >
-                  Add all
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {suggestedSkills.map((skill) => {
-                  const accepted = acceptedSuggestions.has(skill);
-                  return (
-                    <button
-                      key={skill}
-                      type="button"
-                      onClick={() => !accepted && acceptSuggestion(skill)}
-                      disabled={accepted}
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
-                        accepted
-                          ? "border-transparent bg-secondary/50 text-muted-foreground line-through cursor-default"
-                          : "border-border bg-background text-foreground hover:bg-secondary hover:border-primary/40"
-                      )}
-                    >
-                      {accepted ? (
-                        <Check className="size-3 text-green-600" />
-                      ) : (
-                        <Plus className="size-3" />
-                      )}
-                      {skill}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Click a skill to add it to your profile. Changes only save when you submit.
-              </p>
-            </div>
-          )}
-
-          {/* ── Submit ───────────────────────────────────────────────────── */}
-          {submitError && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-              {submitError}
-            </div>
-          )}
-          {submitSuccess && (
-            <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
-              Profile {profileExists ? "updated" : "created"} successfully.
-            </div>
-          )}
-
-          <Button type="submit" disabled={disabled} className="w-full">
-            {submitting ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Saving…
-              </>
-            ) : profileExists ? (
-              "Update Profile"
-            ) : (
-              "Create Profile"
-            )}
-          </Button>
-        </form>
-      </div>
+        <aside className="surface p-6 lg:sticky lg:top-24">
+          <span className="grid size-11 place-items-center rounded-xl bg-accent text-accent-foreground"><FileText className="size-5" /></span>
+          <h2 className="mt-5 text-xl font-bold">Resume intelligence</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Upload a PDF and CredX will suggest technical skills for you to approve.</p>
+          <input ref={fileRef} type="file" accept="application/pdf" className="sr-only" onChange={(event) => uploadResume(event.target.files?.[0])} />
+          <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()} className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card text-sm font-bold hover:bg-muted disabled:opacity-60">{uploading ? <LoaderCircle className="size-4 animate-spin" /> : <Upload className="size-4" />}{uploading ? "Analyzing resume" : resumeUrl ? "Replace resume" : "Upload PDF"}</button>
+          {resumeUrl && <a href={resumeUrl} target="_blank" rel="noreferrer" className="mt-3 block text-center text-xs font-bold text-primary hover:underline">View current resume</a>}
+          <div className="mt-6 rounded-xl bg-muted p-4"><p className="text-xs font-bold">Before you upload</p><ul className="mt-2 space-y-1.5 text-xs leading-5 text-muted-foreground"><li>PDF format only</li><li>Maximum file size: 5 MB</li><li>You choose which suggestions to keep</li></ul></div>
+        </aside>
+      </form>
     </main>
   );
 }
