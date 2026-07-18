@@ -27,8 +27,14 @@ export async function apply(studentId: string, listingId: string) {
       updatedAt: now,
     });
     return application.toObject();
-  } catch (err: any) {
-    if (err?.code === 11000) throw new ApplicationDuplicateError("Already applied");
+  } catch (err: unknown) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      err.code === 11000
+    )
+      throw new ApplicationDuplicateError("Already applied");
     throw err;
   }
 }
@@ -36,6 +42,17 @@ export async function apply(studentId: string, listingId: string) {
 export async function listForStudent(studentId: string) {
   return Application.find({ studentId })
     .populate("listingId", "title company location")
+    .sort({ appliedAt: -1 })
+    .lean();
+}
+
+export async function listForRecruiter(recruiterId: string) {
+  const listings = await Listing.find({ recruiterId }).select("_id").lean();
+  const listingIds = listings.map((listing) => listing._id);
+
+  return Application.find({ listingId: { $in: listingIds } })
+    .populate("listingId", "title company location")
+    .populate("studentId", "name email image")
     .sort({ appliedAt: -1 })
     .lean();
 }
